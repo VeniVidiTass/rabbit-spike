@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"        # RabbitMQ messaging port
+      - "15672:15672"      # Management UI
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  producer:
+    build:
+      context: ./producer
+    ports:
+      - "8080:8080"        # Web UI
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+
+  consumer:
+    build:
+      context: ./consumer
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq

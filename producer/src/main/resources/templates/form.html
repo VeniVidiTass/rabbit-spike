@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Send Message</title>
+</head>
+<body>
+<h1>Send a Message</h1>
+<form th:action="@{/send}" method="post" th:object="${message}">
+    <label>
+        <input type="text" th:field="*{text}" placeholder="Enter your message"/>
+    </label>
+    <button type="submit">SEND</button>
+</form>
+</body>
+</html>
