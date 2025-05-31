@@ -13,6 +13,10 @@ import java.util.Random;
 public class MessageListener {
 
     private final Random random = new Random();
+    private final EmailService emailService;
+    public MessageListener(EmailService emailService) {
+        this.emailService = emailService;
+    }
 
     @RabbitListener(queues = RabbitConfig.QUEUE_NAME)
     public void receiveMessage(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws Exception {
@@ -29,12 +33,15 @@ public class MessageListener {
                 throw new RuntimeException("Simulated processing failure");
             }
 
+            // Send email via SMTP to MailDev
+            emailService.sendEmail(message);
 
             // If successful
             System.out.println("✅ Processed message: " + msg);
             channel.basicAck(deliveryTag, false);
 
         } catch (Exception e) {
+            // BUG: if the email has syntax errors, the requeuing will cause an infinite loop
             System.err.println("❌ Error: " + e.getMessage() + " — NACKing and requeuing...");
             channel.basicNack(deliveryTag, false, true); // Requeue = true
         }
