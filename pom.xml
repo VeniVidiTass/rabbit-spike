@@ -7,9 +7,8 @@
     <groupId>com.example</groupId>
     <artifactId>rabbit-spike</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
-    <modules>
+    <packaging>pom</packaging>    <modules>
+        <module>shared</module>
         <module>producer</module>
         <module>consumer</module>
     </modules>

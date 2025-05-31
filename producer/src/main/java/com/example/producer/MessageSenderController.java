@@ -1,5 +1,6 @@
 package com.example.producer;
 
+import com.example.shared.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -8,7 +9,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Random;
 
 @Controller
@@ -32,25 +32,38 @@ public class MessageSenderController {
 
     @PostMapping("/send")
     public String sendMessage(@ModelAttribute Message message) {
-        rabbitTemplate.convertAndSend(RabbitConfig.QUEUE_NAME, message.getText());
-        saveToMongoAsync(message.getText());
-        return "redirect:/";
-    }
-
-    @Async
-    public void saveToMongoAsync(String text) {
-        // Current time + random 0–24 hours
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.HOUR, random.nextInt(25)); // 0–24 inclusive
-
-        MessageRecord record = new MessageRecord(text, cal.getTime());
-        messageRepo.save(record);
-        System.out.println("💾 Saved to MongoDB: " + text + " at " + record.getScheduledAt());
-    }
-
-    public static class Message {
-        private String text;
-        public String getText() { return text; }
-        public void setText(String text) { this.text = text; }
+        try {
+            System.out.println("Received message - From: " + message.getFrom() + 
+                             ", To: " + message.getTo() + 
+                             ", Subject: " + message.getSubject() + 
+                             ", Body: " + message.getBody());
+            
+            rabbitTemplate.convertAndSend(RabbitConfig.QUEUE_NAME, message);
+            System.out.println("Message sent to RabbitMQ queue: " + RabbitConfig.QUEUE_NAME);
+            
+            saveToMongoAsync(message);
+            return "redirect:/";
+        } catch (Exception e) {
+            System.err.println("Error in sendMessage: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/?error";
+        }
+    }@Async
+    public void saveToMongoAsync(Message message) {
+        try {
+            // Current time + random 0–24 hours
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR, random.nextInt(25)); // 0–24 inclusive
+            message.setScheduledAt(cal.getTime());
+            String body = message.getBody();
+            System.out.println("Saving message: " + (body != null ? body : "No body provided") + " at " + message.getScheduledAt().toString());
+            
+            // Actually save to MongoDB
+            messageRepo.save(message);
+            System.out.println("Message saved to MongoDB with ID: " + message.getId());
+        } catch (Exception e) {
+            System.err.println("Error saving message to MongoDB: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

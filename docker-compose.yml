@@ -27,10 +27,10 @@ services:
       - ME_CONFIG_BASICAUTH_PASSWORD=admin
     depends_on:
       - mongo
-
   producer:
     build:
-      context: ./producer
+      context: .
+      dockerfile: ./producer/Dockerfile
     ports:
       - "8080:8080"
     environment:
@@ -42,7 +42,8 @@ services:
 
   consumer:
     build:
-      context: ./consumer
+      context: .
+      dockerfile: ./consumer/Dockerfile
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/messages
