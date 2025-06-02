@@ -6,8 +6,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.io.Serializable;
 import java.util.Date;
 
-@Document(collection = "messages")
-public class Message implements Serializable {
+// passare ad usare direttamente org.springframework.mail.SimpleMailMessage
+@Document(collection = "email")
+public class Email implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,9 +21,9 @@ public class Message implements Serializable {
     private String body;
     private Date scheduledAt = null;
 
-    public Message() {}
+    public Email() {}
 
-    public Message(String from, String to, String subject, String body) {
+    public Email(String from, String to, String subject, String body) {
         this.from = from;
         this.to = to;
         this.subject = subject;
@@ -60,7 +61,7 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
-        return "Message{" +
+        return "Email{" +
                 "from='" + from + '\'' +
                 ", to='" + to + '\'' +
                 ", subject='" + subject + '\'' +

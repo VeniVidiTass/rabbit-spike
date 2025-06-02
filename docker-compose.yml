@@ -2,31 +2,45 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"
+    #  - "5672:5672"
       - "15672:15672"
     hostname: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   mongo:
-    image: mongo:6.0
-    ports:
-      - "27017:27017"
+    image: mongo:8.0.9
+    #ports:
+    #  - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   mongo-express:
     image: mongo-express
     ports:
-      - "8082:8081"
+      - "8081:8081"
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=27017
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=admin
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+
   producer:
     build:
       context: .
@@ -35,21 +49,34 @@ services:
       - "8080:8080"
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/messages
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/producer
     depends_on:
-      - rabbitmq
-      - mongo
-
-  consumer:
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+  consumer-email:
     build:
       context: .
-      dockerfile: ./consumer/Dockerfile
+      dockerfile: ./consumer-email/Dockerfile
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/messages
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/email
     depends_on:
-      - rabbitmq
-      - mongo
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  consumer-sms:
+    build:
+      context: .
+      dockerfile: ./consumer-sms/Dockerfile
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
   
   maildev:
     image: maildev/maildev:2.2.1
@@ -59,8 +86,11 @@ services:
       - MAILDEV_WEB_PORT=1080
       - MAILDEV_SMTP_PORT=1025
     ports:
-      - "8081:1080"
-      - "8025:1025"
+      - "8082:1080"
+    #  - "8025:1025"
+    depends_on:
+      consumer-email:
+        condition: service_started
     logging:
       driver: "json-file"
       options:

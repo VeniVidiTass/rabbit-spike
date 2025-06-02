@@ -1,6 +1,6 @@
-package com.example.consumer;
+package com.example.consumeremail;
 
-import com.example.shared.Message;
+import com.example.shared.Email;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,16 +14,16 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendEmail(Message message) throws RuntimeException {
+    public void sendEmail(Email email) throws RuntimeException {
         try {
-            SimpleMailMessage email = new SimpleMailMessage();
-            email.setFrom(message.getFrom());
-            email.setTo(message.getTo());
-            email.setSubject(message.getSubject());
-            email.setText(message.getBody());
+            SimpleMailMessage emailMessage = new SimpleMailMessage();
+            emailMessage.setFrom(email.getFrom());
+            emailMessage.setTo(email.getTo());
+            emailMessage.setSubject(email.getSubject());
+            emailMessage.setText(email.getBody());
 
-            mailSender.send(email);
-            System.out.println("📧 Email sent successfully to " + message.getTo());
+            mailSender.send(emailMessage);
+            System.out.println("📧 Email sent successfully to " + email.getTo());
         } catch (Exception e) {
             System.err.println("❌ Failed to send email: " + e.getMessage());
             throw new RuntimeException("Email sending failed", e);

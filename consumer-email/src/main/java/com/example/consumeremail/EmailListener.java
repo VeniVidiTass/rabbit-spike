@@ -1,6 +1,6 @@
-package com.example.consumer;
+package com.example.consumeremail;
 
-import com.example.shared.Message;
+import com.example.shared.Email;
 import com.rabbitmq.client.Channel;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -10,16 +10,16 @@ import org.springframework.stereotype.Component;
 import java.util.Random;
 
 @Component
-public class MessageListener {
+public class EmailListener {
 
     private final Random random = new Random();
     private final EmailService emailService;
-    public MessageListener(EmailService emailService) {
+    public EmailListener(EmailService emailService) {
         this.emailService = emailService;
     }
 
     @RabbitListener(queues = RabbitConfig.QUEUE_NAME)
-    public void receiveMessage(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws Exception {
+    public void receiveEmail(Email message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws Exception {
         String msg = message.toString();
 
         try {

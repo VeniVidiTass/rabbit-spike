@@ -1,4 +1,4 @@
-package com.example.consumer;
+package com.example.consumersms;
 
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

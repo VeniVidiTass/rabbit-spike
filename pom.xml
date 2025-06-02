@@ -10,6 +10,7 @@
     <packaging>pom</packaging>    <modules>
         <module>shared</module>
         <module>producer</module>
-        <module>consumer</module>
+        <module>consumer-email</module>
+        <module>consumer-sms</module>
     </modules>
 </project>
