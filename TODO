@@ -1,0 +1,1 @@
+The producer should become a listener to an Appointment's MongoDB Server. When a new item is added to the "appointment" collection the producer grabs it, de-serialize it and proceeds like that was sent with the current form at 8080.
