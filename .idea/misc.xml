@@ -6,6 +6,7 @@
       <list>
         <option value="$PROJECT_DIR$/producer/pom.xml" />
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/mongo-rabbit-bridge/pom.xml" />
       </list>
     </option>
   </component>

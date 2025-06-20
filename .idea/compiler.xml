@@ -7,6 +7,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="producer" />
+        <module name="shared" />
+        <module name="mongo-rabbit-bridge" />
+        <module name="consumer-sms" />
         <module name="consumer" />
       </profile>
     </annotationProcessing>
@@ -14,7 +17,10 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="consumer" options="-parameters" />
+      <module name="consumer-sms" options="-parameters" />
+      <module name="mongo-rabbit-bridge" options="-parameters" />
       <module name="producer" options="-parameters" />
+      <module name="shared" options="-parameters" />
     </option>
   </component>
 </project>

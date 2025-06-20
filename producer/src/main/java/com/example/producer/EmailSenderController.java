@@ -14,13 +14,18 @@ import java.util.Random;
 @Controller
 public class EmailSenderController {
 
-    private final RabbitTemplate rabbitTemplate;
+    // private final RabbitTemplate rabbitTemplate;
     private final EmailRecordRepository emailRepo;
     private final Random random = new Random();
 
-    @Autowired
+/*    @Autowired
     public EmailSenderController(RabbitTemplate rabbitTemplate, EmailRecordRepository emailRepo) {
         this.rabbitTemplate = rabbitTemplate;
+        this.emailRepo = emailRepo;
+    }*/
+
+    @Autowired
+    public EmailSenderController(EmailRecordRepository emailRepo) {
         this.emailRepo = emailRepo;
     }
 
@@ -38,8 +43,9 @@ public class EmailSenderController {
                     ", Subject: " + email.getSubject() +
                     ", Body: " + email.getBody());
 
-            rabbitTemplate.convertAndSend(RabbitConfig.EMAIL_QUEUE_NAME, email);
-            System.out.println("Email sent to RabbitMQ queue: " + RabbitConfig.EMAIL_QUEUE_NAME);
+            // rabbitTemplate.convertAndSend(RabbitConfig.EMAIL_QUEUE_NAME, email);
+            // System.out.println("Email sent to RabbitMQ queue: " + RabbitConfig.EMAIL_QUEUE_NAME);
+            System.out.println("Not sending to Emails RabbitMQ anymore");
 
             saveToMongoAsync(email);
             return "redirect:/";

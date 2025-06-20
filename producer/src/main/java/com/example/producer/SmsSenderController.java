@@ -15,13 +15,18 @@ import java.util.Random;
 @RequestMapping("/sms")
 public class SmsSenderController {
 
-    private final RabbitTemplate rabbitTemplate;
+    // private final RabbitTemplate rabbitTemplate;
     private final SmsRecordRepository smsRepo;
     private final Random random = new Random();
 
-    @Autowired
+/*    @Autowired
     public SmsSenderController(RabbitTemplate rabbitTemplate, SmsRecordRepository smsRepo) {
         this.rabbitTemplate = rabbitTemplate;
+        this.smsRepo = smsRepo;
+    }*/
+
+    @Autowired
+    public SmsSenderController(SmsRecordRepository smsRepo) {
         this.smsRepo = smsRepo;
     }
 
@@ -38,8 +43,9 @@ public class SmsSenderController {
                     ", To: " + sms.getTo() +
                     ", Body: " + sms.getBody());
 
-            rabbitTemplate.convertAndSend(RabbitConfig.SMS_QUEUE_NAME, sms);
-            System.out.println("SMS sent to RabbitMQ queue: " + RabbitConfig.SMS_QUEUE_NAME);
+            // rabbitTemplate.convertAndSend(RabbitConfig.SMS_QUEUE_NAME, sms);
+            // System.out.println("SMS sent to RabbitMQ queue: " + RabbitConfig.SMS_QUEUE_NAME);
+            System.out.println("Not sending SMS to RabbitMQ anymore");
 
             saveToMongoAsync(sms);
             return "redirect:/sms/";
