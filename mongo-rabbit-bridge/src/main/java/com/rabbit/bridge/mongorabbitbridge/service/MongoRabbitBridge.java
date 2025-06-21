@@ -4,16 +4,15 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.rabbit.bridge.mongorabbitbridge.config.RabbitConfig;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.messaging.ChangeStreamRequest;
 import org.springframework.data.mongodb.core.messaging.DefaultMessageListenerContainer;
 import org.springframework.data.mongodb.core.messaging.MessageListener;
 import org.springframework.data.mongodb.core.messaging.MessageListenerContainer;
 import org.springframework.data.mongodb.core.messaging.Subscription;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 
@@ -24,7 +23,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 /**
  * Bridge service that listens to MongoDB Change Streams and forwards inserts to RabbitMQ.
  */
-@Component
+@Service
 public class MongoRabbitBridge {
 
     private final MessageListenerContainer listenerContainer;
@@ -42,7 +41,13 @@ public class MongoRabbitBridge {
         ChangeStreamRequest<Document> request = ChangeStreamRequest.builder((MessageListener<ChangeStreamDocument<Document>, Document>) msg -> {
                     Document body = msg.getBody();
                     System.out.println("New document inserted: " + body.toJson());
-                    rabbitTemplate.convertAndSend(RabbitConfig.QUEUE_NAME, body.toJson());
+                    rabbitTemplate.convertAndSend(RabbitConfig.EMAIL_QUEUE,
+                            body.toJson(),
+                            message -> {
+                                message.getMessageProperties()
+                                        .setContentType(MessageProperties.CONTENT_TYPE_JSON);
+                                return message;
+                            });
                 })
                 .collection("email")
                 .filter(newAggregation(match(where("operationType").is("insert"))))
