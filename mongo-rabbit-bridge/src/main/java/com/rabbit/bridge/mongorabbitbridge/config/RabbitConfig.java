@@ -15,21 +15,24 @@ import java.util.Map;
 public class RabbitConfig {
 
     public static final String EMAIL_QUEUE = "email-queue";
+    public static final String SMS_QUEUE   = "sms-queue";
 
     @Bean
-    public Queue eventQueue() {
-        // non-durable (false), non-auto-delete
+    public Queue emailQueue() {
         return new Queue(EMAIL_QUEUE, false, false, false);
+    }
+
+    @Bean
+    public Queue smsQueue() {
+        return new Queue(SMS_QUEUE, false, false, false);
     }
 
     @Bean
     public MessageConverter producerJackson2MessageConverter() {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
 
-        // optional: explicitly trust your shared package
         DefaultClassMapper classMapper = new DefaultClassMapper();
         classMapper.setTrustedPackages("com.example.shared");
-        // bound type id when sending (you can override if you like)
         classMapper.setIdClassMapping(Map.of(
                 "com.example.shared.Email", com.example.shared.Email.class,
                 "com.example.shared.Sms",   com.example.shared.Sms.class
