@@ -1,20 +1,20 @@
-# Stage 1: build
+# Dockerfile for mongo-rabbit-bridge with shared lib support
 FROM maven:3.8.7-eclipse-temurin-17 AS build
-LABEL authors="GestMed"
-WORKDIR /app
 
-# Copia Maven wrapper e pom
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-RUN chmod +x mvnw
+# First build and install the shared module
+WORKDIR /app/shared
+COPY shared/pom.xml ./
+COPY shared/src ./src
+RUN mvn clean install -DskipTests
 
-# Copia il sorgente e compila
-COPY src src
-RUN ./mvnw clean package -DskipTests
+# Then build the mongo-rabbit-bridge module
+WORKDIR /app/mongo-rabbit-bridge
+COPY mongo-rabbit-bridge/pom.xml ./
+COPY mongo-rabbit-bridge/src ./src
+RUN mvn clean package -DskipTests
 
-# Stage 2: runtime
 FROM eclipse-temurin:17
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-
+COPY --from=build /app/mongo-rabbit-bridge/target/*.jar app.jar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

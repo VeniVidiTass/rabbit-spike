@@ -30,8 +30,8 @@ services:
 
   mongo-rabbit-bridge:
     build:
-      context: ./mongo-rabbit-bridge
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: mongo-rabbit-bridge/Dockerfile
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/producer?replicaSet=rs0
       SPRING_RABBITMQ_HOST: rabbitmq
