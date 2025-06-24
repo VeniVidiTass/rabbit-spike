@@ -43,3 +43,8 @@ docker-compose up --build
 | RabbitMQ Management | 15672 | Queue management interface |
 | MongoDB | 27017 | Database |
 | RabbitMQ | 5672 | Message broker |
+
+
+# Mongo Express (Port 8081)
+Username: `admin`
+Password: `pass`

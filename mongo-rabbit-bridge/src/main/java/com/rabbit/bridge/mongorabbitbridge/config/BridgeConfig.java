@@ -13,6 +13,8 @@ public class BridgeConfig {
     private String emailQueue;
     private String smsQueue;
 
+    public String appointmentCollection;
+
     // - GETTERS -
     public String getEmailCollection() {
         return emailCollection;
@@ -25,6 +27,9 @@ public class BridgeConfig {
     }
     public String getSmsQueue() {
         return smsQueue;
+    }
+    public String getAppointmentCollection() {
+        return appointmentCollection;
     }
 
     // - SETTERS -
@@ -39,6 +44,9 @@ public class BridgeConfig {
     }
     public void setSmsQueue(String smsQueue) {
         this.smsQueue = smsQueue;
+    }
+    public void setAppointmentCollection(String appointmentCollection) {
+        this.appointmentCollection = appointmentCollection;
     }
 
 }

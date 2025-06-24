@@ -1,5 +1,6 @@
 package com.rabbit.bridge.mongorabbitbridge.service;
 
+import com.rabbit.bridge.mongorabbitbridge.model.Appointment;
 import com.example.shared.Email;
 import com.example.shared.Sms;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.messaging.*;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Date;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
@@ -20,6 +22,8 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Component
 public class MongoRabbitBridge {
+
+    private static final String EMAIL_FROM = "no-reply@gestmed.com";
 
     private final MessageListenerContainer listenerContainer;
     private final RabbitTemplate        rabbitTemplate;
@@ -35,61 +39,63 @@ public class MongoRabbitBridge {
         this.listenerContainer = new DefaultMessageListenerContainer(mongoTemplate);
     }
 
+    private Email buildAppointmentEmail(Appointment appt) {
+        if (appt == null) {
+            throw new IllegalArgumentException("Appointment cannot be null");
+        }
+        String to = appt.getPatientEmail();
+        if (to == null || to.isEmpty()) {
+            throw new IllegalArgumentException("Patient email is missing in appointment");
+        }
+        String subject = "Conferma Appuntamento " + (appt.getCode() != null ? appt.getCode() : "");
+        String patientName = appt.getPatientFullName() != null ? appt.getPatientFullName() : "Paziente";
+        String code = appt.getCode() != null ? appt.getCode() : "";
+        String doctorId = appt.getDoctorId() != null ? appt.getDoctorId().toString() : "N/A";
+        String date = appt.getAppointmentDate() != null ? appt.getAppointmentDate().toString() : "data non disponibile";
+        String body = String.format(
+                "Ciao %s,%n%n" +
+                        "Il tuo appuntamento \"%s\" con il Dott. %s è fissato per il %s.%n" +
+                        "Codice prenotazione: %s.%n%n" +
+                        "Grazie!",
+                patientName,
+                code,
+                doctorId,
+                date,
+                code
+        );
+        Email email = new Email(EMAIL_FROM, to, subject, body);
+        email.setScheduledAt(new Date());
+        return email;
+    }
+
     @PostConstruct
     public void init() {
         listenerContainer.start();
 
-        // LOGS: Print the collections being monitored
+        // LOGS: Print the collections & queues being monitored
         System.out.println("Monitoring MongoDB collections:");
-        System.out.println(" - Email Collection: " + props.getEmailCollection());
-        System.out.println(" - SMS Collection: " + props.getSmsCollection());
+        System.out.println(" - Appointment Collection:  " + props.getAppointmentCollection());
         System.out.println("RabbitMQ Queues:");
-        System.out.println(" - Email Queue: " + props.getEmailQueue());
-        System.out.println(" - SMS Queue: " + props.getSmsQueue());
+        System.out.println(" - Email Queue:             " + props.getEmailQueue());
 
-        // ——— EMAIL subscription ———
-        ChangeStreamRequest<Document> emailRequest = ChangeStreamRequest.builder(
+        // ——— APPOINTMENTS subscription (emits into Email queue) ———
+        ChangeStreamRequest<Document> apptRequest = ChangeStreamRequest.builder(
                         (MessageListener<ChangeStreamDocument<Document>, Document>) msg -> {
                             Document raw = msg.getBody();
-                            Email email = mongoTemplate.getConverter().read(Email.class, raw);
-                            System.out.println("Forwarding Email: " + email);
-                            rabbitTemplate.convertAndSend(
-                                    props.getEmailQueue(),
-                                    email
-                            );
+                            System.out.println("Raw appointment document: " + raw.toJson());
+                            Appointment appt = mongoTemplate.getConverter().read(Appointment.class, raw);
+                            Email email = buildAppointmentEmail(appt);
+                            System.out.println("Forwarding Appointment→Email: " + email);
+                            rabbitTemplate.convertAndSend(props.getEmailQueue(), email);
                         })
-                .collection(props.getEmailCollection())
-                .filter(newAggregation(
-                        match(where("operationType").is("insert"))
-                ))
+                .collection(props.getAppointmentCollection())
+                .filter(newAggregation(match(where("operationType").is("insert"))))
                 .build();
-
-        Subscription emailSub = listenerContainer.register(emailRequest, Document.class);
-
-        // ——— SMS subscription ———
-        ChangeStreamRequest<Document> smsRequest = ChangeStreamRequest.builder(
-                        (MessageListener<ChangeStreamDocument<Document>, Document>) msg -> {
-                            Document raw = msg.getBody();
-                            Sms sms = mongoTemplate.getConverter().read(Sms.class, raw);
-                            System.out.println("Forwarding SMS: " + sms);
-                            rabbitTemplate.convertAndSend(
-                                    props.getSmsQueue(),
-                                    sms
-                            );
-                        })
-                .collection(props.getSmsCollection())
-                .filter(newAggregation(
-                        match(where("operationType").is("insert"))
-                ))
-                .build();
-
-        Subscription smsSub = listenerContainer.register(smsRequest, Document.class);
-
-        // wait for both to activate
+        Subscription apptSub = listenerContainer.register(apptRequest, Document.class);
+        // wait for all three to activate
         try {
-            emailSub.await(Duration.ofSeconds(5));
-            smsSub.await(Duration.ofSeconds(5));
-            System.out.println("ChangeStream listeners active for 'email' & 'sms'.");
+            apptSub.await(Duration.ofSeconds(5));
+            System.out.println("ChangeStream listeners active for 'email', 'sms' & 'appointments'.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.err.println("Interrupted while waiting for subscriptions activation");

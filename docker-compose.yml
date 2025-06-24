@@ -1,8 +1,8 @@
 services:
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:3-management
     ports:
-    #  - "5672:5672"
       - "8083:15672"
     hostname: rabbitmq
     environment:
@@ -14,30 +14,67 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
+    networks:
+      - gestmed-network
 
-  mongo:
+  appointments-db:
+    container_name: appointments-db
     image: mongo:8.0.9
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    volumes:
-      - mongo-data:/data/db
-      - ./mongo/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
+    command: ["--replSet","rs0","--bind_ip_all","--port","27017"]
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
+      test: ["CMD","mongosh","--quiet","--eval","db.adminCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+    volumes:
+      - appointments_db_data:/data/db
+      - appointments_db_config:/data/configdb
+    networks:
+      - gestmed-network
+
+  mongo_init:
+    container_name: mongo_init
+    image: mongo:8.0.9
+    depends_on:
+      appointments-db:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/init/mongo-init.sh"]
+    volumes:
+      - ./mongo/mongo-init.sh:/init/mongo-init.sh:ro
+      - ./mongo/init-appointments.js:/init/02-init-appointments.js:ro
+    networks:
+      - gestmed-network
+
+  # Mongo Express (MongoDB web admin)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    depends_on:
+      appointments-db:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: "mongodb://appointments-db:27017/gestmed_appointments_db?replicaSet=rs0"
+      ME_CONFIG_BASICAUTH_ENABLED: "false"
+      ME_CONFIG_SITE_COOKIESECRET: "changeme"
+      ME_CONFIG_SITE_SESSIONSECRET: "changeme"
+    ports:
+      - "8081:8081"
+    networks:
+      - gestmed-network
 
   mongo-rabbit-bridge:
+    container_name: mongo-rabbit-bridge
     build:
       context: .
       dockerfile: mongo-rabbit-bridge/Dockerfile
     environment:
-      APP_BRIDGE_EMAIL_COLLECTION: email
+      APP_BRIDGE_EMAIL_COLLECTION: appointments
       APP_BRIDGE_SMS_COLLECTION: sms
       APP_BRIDGE_EMAIL_QUEUE: "email-queue"
       APP_BRIDGE_SMS_QUEUE: "sms-queue"
-      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/producer?replicaSet=rs0
+      SPRING_DATA_MONGODB_URI: mongodb://appointments-db:27017/gestmed_appointments_db?replicaSet=rs0
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
@@ -45,26 +82,32 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      mongo:
+      appointments-db:
         condition: service_healthy
     restart: on-failure
+    networks:
+      - gestmed-network
 
-  producer:
-    build:
-      context: .
-      dockerfile: ./producer/Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/producer
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
+#  producer:
+#    container_name: producer
+#    build:
+#      context: .
+#      dockerfile: ./producer/Dockerfile
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      - SPRING_RABBITMQ_HOST=rabbitmq
+#      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/producer
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#      mongo:
+#        condition: service_healthy
+#    networks:
+#      - gestmed-network
 
   consumer-email:
+    container_name: consumer-email
     build:
       context: .
       dockerfile: ./consumer-email/Dockerfile
@@ -74,10 +117,11 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
+    networks:
+      - gestmed-network
 
   consumer-sms:
+    container_name: consumer-sms
     build:
       context: .
       dockerfile: ./consumer-sms/Dockerfile
@@ -86,8 +130,11 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-  
+    networks:
+      - gestmed-network
+
   maildev:
+    container_name: maildev
     image: maildev/maildev:2.2.1
     hostname: maildev
     environment:
@@ -96,7 +143,6 @@ services:
       - MAILDEV_SMTP_PORT=1025
     ports:
       - "8082:1080"
-    #  - "8025:1025"
     depends_on:
       consumer-email:
         condition: service_started
@@ -104,6 +150,13 @@ services:
       driver: "json-file"
       options:
         max-size: "1m"
+    networks:
+      - gestmed-network
 
 volumes:
-  mongo-data:
+  appointments_db_data:
+  appointments_db_config:
+
+networks:
+  gestmed-network:
+    driver: bridge
