@@ -1,8 +1,10 @@
 package com.example.consumeremail;
 
 import com.example.shared.Email;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,16 +16,25 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendEmail(Email email) throws RuntimeException {
+    public void sendEmail(Email email) {
         try {
-            SimpleMailMessage emailMessage = new SimpleMailMessage();
-            emailMessage.setFrom(email.getFrom());
-            emailMessage.setTo(email.getTo());
-            emailMessage.setSubject(email.getSubject());
-            emailMessage.setText(email.getBody());
+            // 1) create a MimeMessage
+            MimeMessage msg = mailSender.createMimeMessage();
 
-            mailSender.send(emailMessage);
+            // 2) use the helper, set 'true' for HTML
+            MimeMessageHelper helper = new MimeMessageHelper(msg, false, "UTF-8");
+            helper.setFrom(email.getFrom());
+            helper.setTo(email.getTo());
+            helper.setSubject(email.getSubject());
+            helper.setText(email.getBody(), true); // <-- true = isHtml
+
+            // 3) send
+            mailSender.send(msg);
             System.out.println("📧 Email sent successfully to " + email.getTo());
+
+        } catch (MessagingException e) {
+            System.err.println("❌ Failed to build HTML email: " + e.getMessage());
+            throw new RuntimeException("Email building failed", e);
         } catch (Exception e) {
             System.err.println("❌ Failed to send email: " + e.getMessage());
             throw new RuntimeException("Email sending failed", e);
