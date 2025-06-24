@@ -3,6 +3,7 @@ package com.rabbit.bridge.mongorabbitbridge.service;
 import com.example.shared.Email;
 import com.example.shared.Sms;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.rabbit.bridge.mongorabbitbridge.config.BridgeConfig;
 import com.rabbit.bridge.mongorabbitbridge.config.RabbitConfig;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
@@ -23,9 +24,12 @@ public class MongoRabbitBridge {
     private final MessageListenerContainer listenerContainer;
     private final RabbitTemplate        rabbitTemplate;
     private final MongoTemplate         mongoTemplate;
+    private final BridgeConfig props;
 
     public MongoRabbitBridge(MongoTemplate mongoTemplate,
-                             RabbitTemplate rabbitTemplate) {
+                             RabbitTemplate rabbitTemplate,
+                             BridgeConfig props) {
+        this.props = props;
         this.mongoTemplate = mongoTemplate;
         this.rabbitTemplate = rabbitTemplate;
         this.listenerContainer = new DefaultMessageListenerContainer(mongoTemplate);
@@ -34,6 +38,11 @@ public class MongoRabbitBridge {
     @PostConstruct
     public void init() {
         listenerContainer.start();
+
+        // LOGS: Print the collections being monitored
+        System.out.println("Monitoring MongoDB collections:");
+        System.out.println(" - Email Collection: " + props.getEmailCollection());
+        System.out.println(" - SMS Collection: " + props.getSmsCollection());
 
         // ——— EMAIL subscription ———
         ChangeStreamRequest<Document> emailRequest = ChangeStreamRequest.builder(
@@ -46,7 +55,7 @@ public class MongoRabbitBridge {
                                     email
                             );
                         })
-                .collection("email")
+                .collection(props.getEmailCollection())
                 .filter(newAggregation(
                         match(where("operationType").is("insert"))
                 ))
@@ -65,7 +74,7 @@ public class MongoRabbitBridge {
                                     sms
                             );
                         })
-                .collection("sms")
+                .collection(props.getSmsCollection())
                 .filter(newAggregation(
                         match(where("operationType").is("insert"))
                 ))

@@ -33,6 +33,8 @@ services:
       context: .
       dockerfile: mongo-rabbit-bridge/Dockerfile
     environment:
+      APP_BRIDGE_EMAIL_COLLECTION: email
+      APP_BRIDGE_SMS_COLLECTION: sms
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/producer?replicaSet=rs0
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672

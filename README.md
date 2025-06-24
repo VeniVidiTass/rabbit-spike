@@ -28,8 +28,6 @@ docker-compose up --build
 - **RabbitMQ dashboard**: [http://localhost:15672](http://localhost:15672)  
   (username: `guest`, password: `guest`)
 - **MailDev (email testing)**: [http://localhost:8084](http://localhost:8084)
-- **Mongo Express (database)**: [http://localhost:8083](http://localhost:8083)  
-  (username: `admin`, password: `admin`)
 - **Consumer Email**: Running on port 8081
 - **Consumer SMS**: Running on port 8082
 - Consumer logs: visible in the terminal output
@@ -41,7 +39,6 @@ docker-compose up --build
 | Producer | 8080 | Web forms for sending messages |
 | Consumer Email | 8081 | Email message processor |
 | Consumer SMS | 8082 | SMS message processor |
-| Mongo Express | 8083 | MongoDB web interface |
 | MailDev | 8084 | Email testing interface |
 | RabbitMQ Management | 15672 | Queue management interface |
 | MongoDB | 27017 | Database |
