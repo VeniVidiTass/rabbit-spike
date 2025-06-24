@@ -6,8 +6,12 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.bridge")
 public class BridgeConfig {
+
     private String emailCollection;
     private String smsCollection;
+
+    private String emailQueue;
+    private String smsQueue;
 
     // - GETTERS -
     public String getEmailCollection() {
@@ -16,6 +20,12 @@ public class BridgeConfig {
     public String getSmsCollection() {
         return smsCollection;
     }
+    public String getEmailQueue() {
+        return emailQueue;
+    }
+    public String getSmsQueue() {
+        return smsQueue;
+    }
 
     // - SETTERS -
     public void setEmailCollection(String emailCollection) {
@@ -23,6 +33,12 @@ public class BridgeConfig {
     }
     public void setSmsCollection(String smsCollection) {
         this.smsCollection = smsCollection;
+    }
+    public void setEmailQueue(String emailQueue) {
+        this.emailQueue = emailQueue;
+    }
+    public void setSmsQueue(String smsQueue) {
+        this.smsQueue = smsQueue;
     }
 
 }

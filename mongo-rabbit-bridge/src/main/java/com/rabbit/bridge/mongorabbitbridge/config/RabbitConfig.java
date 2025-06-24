@@ -1,6 +1,5 @@
 package com.rabbit.bridge.mongorabbitbridge.config;
 
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
@@ -13,19 +12,6 @@ import java.util.Map;
 
 @Configuration
 public class RabbitConfig {
-
-    public static final String EMAIL_QUEUE = "email-queue";
-    public static final String SMS_QUEUE   = "sms-queue";
-
-    @Bean
-    public Queue emailQueue() {
-        return new Queue(EMAIL_QUEUE, false, false, false);
-    }
-
-    @Bean
-    public Queue smsQueue() {
-        return new Queue(SMS_QUEUE, false, false, false);
-    }
 
     @Bean
     public MessageConverter producerJackson2MessageConverter() {

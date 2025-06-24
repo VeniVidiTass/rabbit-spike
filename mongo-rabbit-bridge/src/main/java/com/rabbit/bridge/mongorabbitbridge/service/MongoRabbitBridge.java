@@ -43,6 +43,9 @@ public class MongoRabbitBridge {
         System.out.println("Monitoring MongoDB collections:");
         System.out.println(" - Email Collection: " + props.getEmailCollection());
         System.out.println(" - SMS Collection: " + props.getSmsCollection());
+        System.out.println("RabbitMQ Queues:");
+        System.out.println(" - Email Queue: " + props.getEmailQueue());
+        System.out.println(" - SMS Queue: " + props.getSmsQueue());
 
         // ——— EMAIL subscription ———
         ChangeStreamRequest<Document> emailRequest = ChangeStreamRequest.builder(
@@ -51,7 +54,7 @@ public class MongoRabbitBridge {
                             Email email = mongoTemplate.getConverter().read(Email.class, raw);
                             System.out.println("Forwarding Email: " + email);
                             rabbitTemplate.convertAndSend(
-                                    RabbitConfig.EMAIL_QUEUE,
+                                    props.getEmailQueue(),
                                     email
                             );
                         })
@@ -70,7 +73,7 @@ public class MongoRabbitBridge {
                             Sms sms = mongoTemplate.getConverter().read(Sms.class, raw);
                             System.out.println("Forwarding SMS: " + sms);
                             rabbitTemplate.convertAndSend(
-                                    RabbitConfig.SMS_QUEUE,
+                                    props.getSmsQueue(),
                                     sms
                             );
                         })
