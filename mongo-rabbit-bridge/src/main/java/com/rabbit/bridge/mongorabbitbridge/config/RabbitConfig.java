@@ -1,5 +1,7 @@
 package com.rabbit.bridge.mongorabbitbridge.config;
 
+import com.example.shared.Email;
+import com.example.shared.Sms;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
@@ -13,28 +15,37 @@ import java.util.Map;
 @Configuration
 public class RabbitConfig {
 
+    /**
+     * Configure a Jackson-based message converter that knows how to
+     * (de)serialize our shared Email and Sms classes.
+     */
     @Bean
     public MessageConverter producerJackson2MessageConverter() {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
 
         DefaultClassMapper classMapper = new DefaultClassMapper();
+        // Trust only our shared package
         classMapper.setTrustedPackages("com.example.shared");
+        // Map incoming type IDs to actual classes
         classMapper.setIdClassMapping(Map.of(
-                "com.example.shared.Email", com.example.shared.Email.class,
-                "com.example.shared.Sms",   com.example.shared.Sms.class
+                "com.example.shared.Email", Email.class,
+                "com.example.shared.Sms",   Sms.class
         ));
-        converter.setClassMapper(classMapper);
 
+        converter.setClassMapper(classMapper);
         return converter;
     }
 
+    /**
+     * RabbitTemplate that uses our JSON message converter.
+     */
     @Bean
     public RabbitTemplate rabbitTemplate(
-            ConnectionFactory cf,
+            ConnectionFactory connectionFactory,
             MessageConverter producerJackson2MessageConverter
     ) {
-        RabbitTemplate rt = new RabbitTemplate(cf);
-        rt.setMessageConverter(producerJackson2MessageConverter);
-        return rt;
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(producerJackson2MessageConverter);
+        return template;
     }
 }

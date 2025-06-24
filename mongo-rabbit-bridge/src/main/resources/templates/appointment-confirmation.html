@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Conferma Appuntamento</title>
+    <style>
+        /* define defaults (light mode) */
+        :root {
+            --bg-wrapper:   #f4f4f4;
+            --bg-container: #ffffff;
+            --bg-header:    #0066cc;
+            --bg-footer:    #f9f9f9;
+            --text-main:    #333333;
+            --text-alt:     #777777;
+            --border-light: #eeeeee;
+        }
+
+        /* dark-mode overrides */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-wrapper:   #121212;
+                --bg-container: #1e1e1e;
+                --bg-header:    #003366;
+                --bg-footer:    #1e1e1e;
+                --text-main:    #e0e0e0;
+                --text-alt:     #999999;
+                --border-light: #333333;
+            }
+        }
+
+        /* base reset */
+        body, table, td { margin:0; padding:0; border:0; font-family:Arial,sans-serif; }
+        img { display:block; }
+
+        /* wrapper & layout */
+        .wrapper {
+            width:100%; background-color:var(--bg-wrapper); padding:20px 0;
+        }
+        .container {
+            max-width:600px; margin:0 auto;
+            background-color:var(--bg-container);
+            border-radius:8px; overflow:hidden;
+        }
+
+        /* header */
+        .header {
+            background-color:var(--bg-header);
+            color:#ffffff; padding:20px; text-align:center;
+        }
+        .header h1 { margin:0; font-size:24px; }
+
+        /* content */
+        .content {
+            padding:20px; color:var(--text-main); line-height:1.5;
+        }
+        .content h2 {
+            font-size:20px; margin-bottom:10px;
+        }
+        .content p {
+            margin:10px 0;
+        }
+        .details {
+            margin-top:20px; border-top:1px solid var(--border-light); padding-top:10px;
+        }
+        .details li {
+            margin-bottom:6px; font-size:14px;
+        }
+
+        /* footer */
+        .footer {
+            background-color:var(--bg-footer);
+            color:var(--text-alt); padding:15px 20px;
+            font-size:12px; text-align:center;
+        }
+    </style>
+</head>
+<body>
+<table class="wrapper">
+    <tr><td align="center">
+        <table class="container">
+            <tr><td class="header">
+                <h1>GestMed</h1>
+            </td></tr>
+            <tr><td class="content">
+                <h2 th:text="'Conferma Appuntamento ' + ${code} + ' – ' + ${serviceName}">
+                    Conferma Appuntamento AHUSX001 – Cardio
+                </h2>
+                <p>Ciao <strong th:text="${patientName}">Mario Rossi</strong>,</p>
+                <p>
+                    Il tuo appuntamento
+                    <strong th:text="${code}">AHUSX001</strong>
+                    per il servizio
+                    <strong th:text="${serviceName}">Cardio</strong>
+                    con il/la Dott.
+                    <strong th:text="${doctorName}">Bianchi</strong>
+                    è fissato per il
+                    <strong th:text="${appointmentDate}">2025-06-15 10:00</strong>.
+                </p>
+                <p>Codice prenotazione: <strong th:text="${code}">AHUSX001</strong>.</p>
+                <ul class="details" th:if="${extras}">
+                    <li th:each="e : ${extras.entrySet()}"
+                        th:text="|${e.key}: ${e.value}|">
+                        notes: Controllo cardiologico di routine
+                    </li>
+                </ul>
+            </td></tr>
+            <tr><td class="footer">
+                Grazie,<br/><em>Team GestMed</em>
+            </td></tr>
+        </table>
+    </td></tr>
+</table>
+</body>
+</html>
