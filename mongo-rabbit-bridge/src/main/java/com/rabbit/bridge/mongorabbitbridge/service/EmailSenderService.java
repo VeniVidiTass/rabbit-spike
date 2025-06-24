@@ -16,35 +16,34 @@ public class EmailSenderService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailSenderService.class);
 
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbit;
     private final BridgeProperties props;
     private final AppointmentToEmailMapper mapper;
     private final ServiceApiClient serviceClient;
-    private final DoctorApiClient  doctorClient;
+    private final DoctorApiClient doctorClient;
 
-    public EmailSenderService(RabbitTemplate rabbitTemplate,
+    public EmailSenderService(RabbitTemplate rabbit,
                               BridgeProperties props,
                               AppointmentToEmailMapper mapper,
                               ServiceApiClient serviceClient,
-                              DoctorApiClient doctorClient
-    ) {
-        this.rabbitTemplate = rabbitTemplate;
+                              DoctorApiClient doctorClient) {
+        this.rabbit         = rabbit;
         this.props          = props;
         this.mapper         = mapper;
         this.serviceClient  = serviceClient;
         this.doctorClient   = doctorClient;
     }
 
+    /**
+     * Resolve service + doctor names, render HTML email, and enqueue.
+     */
     public void sendAppointmentEmail(AppointmentDto dto) {
-        // 1) lookup names
         String serviceName = serviceClient.getServiceById(dto.getServiceId()).getName();
         String doctorName  = doctorClient.getDoctorById(dto.getDoctorId()).getName();
 
-        // 2) build & send
         Email email = mapper.map(dto, serviceName, doctorName);
-        rabbitTemplate.convertAndSend(props.getEmailQueue(), email);
-
-        log.debug("Sent appointment email (svc='{}', doc='{}') to '{}'",
-                serviceName, doctorName, props.getEmailQueue());
+        rabbit.convertAndSend(props.getEmailQueue(), email);
+        log.debug("Email enqueued → queue='{}', to='{}'",
+                props.getEmailQueue(), dto.getPatientEmail());
     }
 }

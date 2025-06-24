@@ -70,15 +70,16 @@ services:
       context: .
       dockerfile: mongo-rabbit-bridge/Dockerfile
     environment:
-      APP_BRIDGE_EMAIL_COLLECTION: appointments
-      APP_BRIDGE_SMS_COLLECTION: sms
-      APP_BRIDGE_EMAIL_QUEUE: "email-queue"
-      APP_BRIDGE_SMS_QUEUE: "sms-queue"
-      SPRING_DATA_MONGODB_URI: mongodb://appointments-db:27017/gestmed_appointments_db?replicaSet=rs0
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_DATA_MONGODB_URI:            mongodb://appointments-db:27017/gestmed_appointments_db?replicaSet=rs0
+      SPRING_RABBITMQ_HOST:               rabbitmq
+      SPRING_RABBITMQ_PORT:               5672
+      SPRING_RABBITMQ_USERNAME:           guest
+      SPRING_RABBITMQ_PASSWORD:           guest
+      APP_BRIDGE_EMAIL_QUEUE:             email-queue
+      APP_BRIDGE_SMS_QUEUE:               sms-queue
+      APP_BRIDGE_APPOINTMENT_COLLECTION:  appointments
+      APP_BRIDGE_SERVICE_API_BASE_URL:    http://api-gateway:3000/api
+      SPRING_MAIN_WEB_APPLICATION_TYPE:   none
     depends_on:
       rabbitmq:
         condition: service_healthy
