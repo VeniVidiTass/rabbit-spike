@@ -1,50 +1,51 @@
-## 📬 RabbitMQ Spike — Producer & Multiple Consumers
+# Multi-Module Messaging Demo
 
-This project is a RabbitMQ messaging demo with Spring Boot services:
+This repository demonstrates a full RabbitMQ-based notification pipeline, featuring shared domain models, producers, consumers, and a MongoDB-to-RabbitMQ bridge.
 
-- `producer`: Web app on `localhost:8080` with forms to send both Email and SMS messages into separate queues.
-- `consumer-email`: Dedicated consumer for email messages that simulates SMTP email sending via MailDev.
-- `consumer-sms`: Dedicated consumer for SMS messages that simulates SMS sending via external providers.
+## Modules
 
-The consumers introduce:
-- Random processing delays (emails: 0–3 seconds, SMS: 0–1.5 seconds)
-- Simulated failures with automatic requeue (emails: 33% failure, SMS: 15% failure)
+| Module                   | Purpose                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| **shared/**              | Shared `Email` and `Sms` classes with MongoDB annotations.                                    |
+| **consumer-email/**      | Listens on `email-queue` and sends HTML emails via SMTP (MailDev).                            |
+| **consumer-sms/**        | Listens on `sms-queue` and simulates SMS delivery.                                            |
+| **mongo-rabbit-bridge/** | Watches a MongoDB `appointments` collection and publishes enriched notifications to RabbitMQ. |
 
-Useful for testing asynchronous message handling, retry behavior, and multiple queue processing.
+> **Note:** The `producer/` module is maintained separately.
 
-## 🚀 How to Run
+## Usage with Docker Compose
 
-Make sure you have [Docker](https://www.docker.com/products/docker-desktop) installed, then from the root of the project:
+A pre-configured **docker-compose.yml** is included. After cloning, simply:
 
 ```bash
-docker-compose up --build
+docker-compose up -d
 ```
 
-### Access:
+This brings up all services on the following ports:
 
-- **Producer forms**: [http://localhost:8080](http://localhost:8080)
-  - Email form: [http://localhost:8080/](http://localhost:8080/)
-  - SMS form: [http://localhost:8080/sms/](http://localhost:8080/sms/)
-- **RabbitMQ dashboard**: [http://localhost:15672](http://localhost:15672)  
-  (username: `guest`, password: `guest`)
-- **MailDev (email testing)**: [http://localhost:8084](http://localhost:8084)
-- **Consumer Email**: Running on port 8081
-- **Consumer SMS**: Running on port 8082
-- Consumer logs: visible in the terminal output
+| Service                   | Description                          | Port      |
+| ------------------------- | ------------------------------------ | --------- |
+| **RabbitMQ (management)** | AMQP broker + management UI          | 8083      |
+| **Mongo Express**         | MongoDB web admin                    | 8081      |
+| **MailDev UI**            | SMTP testing UI                      | 8082      |
+| **consumer-email**        | Email consumer service               | (no HTTP) |
+| **consumer-sms**          | SMS consumer service                 | (no HTTP) |
+| **mongo-rabbit-bridge**   | Bridge service (background, no HTTP) | (no HTTP) |
 
-### Services & Ports:
+Once up, you can:
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Producer | 8080 | Web forms for sending messages |
-| Consumer Email | 8081 | Email message processor |
-| Consumer SMS | 8082 | SMS message processor |
-| MailDev | 8084 | Email testing interface |
-| RabbitMQ Management | 15672 | Queue management interface |
-| MongoDB | 27017 | Database |
-| RabbitMQ | 5672 | Message broker |
+1. Insert appointment docs into MongoDB.
+2. Publish messages via any producer or directly to RabbitMQ.
+3. View emails in MailDev UI at `http://localhost:8082`.
+4. Explore RabbitMQ at `http://localhost:8083` (guest/guest).
+5. Browse Mongo Express at `http://localhost:8081` (admin/pass).
 
+## Building Locally
 
-# Mongo Express (Port 8081)
-Username: `admin`
-Password: `pass`
+To compile all modules without Docker:
+
+```bash
+./mvnw clean install -DskipTests
+```
+
+Each module has its own README with detailed run instructions.

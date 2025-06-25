@@ -89,24 +89,6 @@ services:
     networks:
       - gestmed-network
 
-#  producer:
-#    container_name: producer
-#    build:
-#      context: .
-#      dockerfile: ./producer/Dockerfile
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      - SPRING_RABBITMQ_HOST=rabbitmq
-#      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/producer
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#      mongo:
-#        condition: service_healthy
-#    networks:
-#      - gestmed-network
-
   consumer-email:
     container_name: consumer-email
     build:
