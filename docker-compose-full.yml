@@ -1,0 +1,95 @@
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - "8083:15672"
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gestmed-network
+
+  mongo-rabbit-bridge:
+    container_name: mongo-rabbit-bridge
+    build:
+      context: ./rabbit-spike
+      dockerfile: mongo-rabbit-bridge/Dockerfile
+    environment:
+      SPRING_DATA_MONGODB_URI:            mongodb://appointments-db:27017/gestmed_appointments_db?replicaSet=rs0
+      SPRING_RABBITMQ_HOST:               rabbitmq
+      SPRING_RABBITMQ_PORT:               5672
+      SPRING_RABBITMQ_USERNAME:           guest
+      SPRING_RABBITMQ_PASSWORD:           guest
+      APP_BRIDGE_EMAIL_QUEUE:             email-queue
+      APP_BRIDGE_SMS_QUEUE:               sms-queue
+      APP_BRIDGE_APPOINTMENT_COLLECTION:  appointments
+      APP_BRIDGE_SERVICE_API_BASE_URL:    http://api-gateway:3000/api
+      SPRING_MAIN_WEB_APPLICATION_TYPE:   none
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      appointments-db:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - gestmed-network
+
+  consumer-email:
+    container_name: consumer-email
+    build:
+      context: ./rabbit-spike
+      dockerfile: consumer-email/Dockerfile
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATA_MONGODB_URI=mongodb://appointments-db:27017/email
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gestmed-network
+
+  consumer-sms:
+    container_name: consumer-sms
+    build:
+      context: ./rabbit-spike
+      dockerfile: consumer-sms/Dockerfile
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gestmed-network
+
+  maildev:
+    container_name: maildev
+    image: maildev/maildev:2.2.1
+    hostname: maildev
+    environment:
+      - TZ=Europe/Rome
+      - MAILDEV_WEB_PORT=1080
+      - MAILDEV_SMTP_PORT=1025
+    ports:
+      - "8082:1080"
+    depends_on:
+      consumer-email:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+    networks:
+      - gestmed-network
+
+
+networks:
+  gestmed-network:
+    driver: bridge
