@@ -1,3 +1,4 @@
+// src/main/java/com/rabbit/bridge/mongorabbitbridge/service/SmsSenderService.java
 package com.rabbit.bridge.mongorabbitbridge.service;
 
 import com.example.shared.Sms;
@@ -18,10 +19,10 @@ public class SmsSenderService {
     private static final Logger log = LoggerFactory.getLogger(SmsSenderService.class);
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
-    private final RabbitTemplate rabbit;
-    private final BridgeProperties props;
-    private final ServiceApiClient serviceClient;
-    private final DoctorApiClient doctorClient;
+    private final RabbitTemplate    rabbit;
+    private final BridgeProperties  props;
+    private final ServiceApiClient  serviceClient;
+    private final DoctorApiClient   doctorClient;
 
     public SmsSenderService(RabbitTemplate rabbit,
                             BridgeProperties props,
@@ -34,26 +35,29 @@ public class SmsSenderService {
     }
 
     /**
-     * If phone is provided, resolve names, build a plain-text SMS and enqueue.
+     * If a phone number is present, resolve details and enqueue a plain-text SMS.
      */
     public void sendAppointmentSms(AppointmentDto dto) {
         String phone = dto.getPatientPhone();
-        if (phone == null || phone.isBlank()) {
-            return;
-        }
+        if (phone == null || phone.isBlank()) return;
 
-        String serviceName = serviceClient.getServiceById(dto.getServiceId()).getName();
-        String doctorName  = doctorClient.getDoctorById(dto.getDoctorId()).getName();
-        String when        = DATE_FMT.format(dto.getAppointmentDate());
+        var svc = serviceClient.getServiceById(dto.getServiceId());
+        var doc = doctorClient.getDoctorById(dto.getDoctorId());
+        String when = DATE_FMT.format(dto.getAppointmentDate());
 
         String text = String.format(
-                "GestMed: App %s il %s con Dott. %s. Codice %s.",
-                serviceName, when, doctorName, dto.getCode()
+                "GestMed: Appuntamento %s (Durata %d min) il %s con Dott. %s (%s). Codice %s.",
+                svc.getName(),
+                svc.getDurationMinutes(),
+                when,
+                doc.getName(),
+                doc.getLicenseNumber(),
+                dto.getCode()
         );
 
         Sms sms = new Sms("GestMed", phone, text);
         rabbit.convertAndSend(props.getSmsQueue(), sms);
-        log.debug("SMS enqueued  → queue='{}', to='{}': {}",
+        log.debug("SMS enqueued → queue='{}', to='{}': {}",
                 props.getSmsQueue(), phone, text);
     }
 }

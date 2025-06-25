@@ -76,31 +76,26 @@
 </head>
 <body>
 <table class="wrapper">
-    <tr><td align="center">
+    <tr><td style="text-align:center;">
         <table class="container">
             <tr><td class="header">
                 <h1>GestMed</h1>
             </td></tr>
             <tr><td class="content">
-                <h2 th:text="'Conferma Appuntamento ' + ${code} + ' – ' + ${serviceName}">
-                    Conferma Appuntamento AHUSX001 – Cardio
-                </h2>
-                <p>Ciao <strong th:text="${patientName}">Mario Rossi</strong>,</p>
+                <h2 th:text="'Conferma Appuntamento ' + ${code} + ' – ' + ${serviceName}"></h2>
                 <p>
                     Il tuo appuntamento
-                    <strong th:text="${code}">AHUSX001</strong>
-                    per il servizio
-                    <strong th:text="${serviceName}">Cardio</strong>
-                    con il/la Dott.
-                    <strong th:text="${doctorName}">Bianchi</strong>
-                    è fissato per il
-                    <strong th:text="${appointmentDate}">2025-06-15 10:00</strong>.
+                    <strong th:text="${serviceName}">…</strong>
+                    (<span th:text="${durationMinutes}"></span> min)
+                    con il/la
+                    <strong th:text="${doctorName}">…</strong>
+                    (<span th:text="${licenseNumber}"></span>)
+                    è fissato per <strong th:text="${appointmentDate}">…</strong>.
                 </p>
-                <p>Codice prenotazione: <strong th:text="${code}">AHUSX001</strong>.</p>
+                <p>Codice prenotazione: <strong th:text="${code}"></strong>.</p>
                 <ul class="details" th:if="${extras}">
                     <li th:each="e : ${extras.entrySet()}"
                         th:text="|${e.key}: ${e.value}|">
-                        notes: Controllo cardiologico di routine
                     </li>
                 </ul>
             </td></tr>

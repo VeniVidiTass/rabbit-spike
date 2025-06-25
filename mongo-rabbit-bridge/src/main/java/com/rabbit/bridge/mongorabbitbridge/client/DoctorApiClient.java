@@ -1,5 +1,7 @@
 package com.rabbit.bridge.mongorabbitbridge.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,11 +20,9 @@ public class DoctorApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(DoctorApiClient.class);
     private final WebClient webClient;
-    private final Duration timeout = Duration.ofSeconds(3);
+    private static final Duration TIMEOUT = Duration.ofSeconds(3);
 
-    public DoctorApiClient(
-            @Value("${app.bridge.service-api-base-url}") String baseUrl
-    ) {
+    public DoctorApiClient(@Value("${app.bridge.service-api-base-url}") String baseUrl) {
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 .build();
@@ -32,16 +32,16 @@ public class DoctorApiClient {
         String idStr = doctorId.toString();
         return webClient.get()
                 .uri("/doctors/{id}", idStr)
-                .exchangeToMono(resp -> {
-                    if (resp.statusCode().is2xxSuccessful()) {
-                        return resp.bodyToMono(DoctorDto.class);
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        return response.bodyToMono(DoctorDto.class);
                     } else {
-                        log.debug("Non-2xx {} fetching doctor '{}'; falling back",
-                                resp.statusCode().value(), idStr);
+                        log.debug("Non-2xx status {} when fetching doctor '{}'; falling back",
+                                response.statusCode().value(), idStr);
                         return Mono.just(fallback(idStr));
                     }
                 })
-                .timeout(timeout)
+                .timeout(TIMEOUT)
                 .onErrorResume(ex -> {
                     log.warn("Error fetching doctor '{}': {}; falling back",
                             idStr, ex.toString());
@@ -54,16 +54,23 @@ public class DoctorApiClient {
         DoctorDto d = new DoctorDto();
         d.setId(id);
         d.setName(id);
+        d.setLicenseNumber("license_number");
         return d;
     }
 
     /** Minimal subset of your Doctor payload */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DoctorDto {
         private String id;
         private String name;
-        public String getId()               { return id;   }
-        public void setId(String id)       { this.id = id; }
-        public String getName()            { return name; }
-        public void setName(String name)   { this.name = name; }
+        @JsonProperty("license_number")
+        private String licenseNumber;
+
+        public String getId()                 { return id; }
+        public void setId(String id)          { this.id = id; }
+        public String getName()               { return name; }
+        public void setName(String name)      { this.name = name; }
+        public String getLicenseNumber()      { return licenseNumber; }
+        public void setLicenseNumber(String l){ this.licenseNumber = l; }
     }
 }

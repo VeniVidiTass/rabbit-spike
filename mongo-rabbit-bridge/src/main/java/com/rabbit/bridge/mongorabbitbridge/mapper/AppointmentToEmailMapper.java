@@ -20,43 +20,45 @@ public class AppointmentToEmailMapper {
     }
 
     /**
-     * Render an HTML email using Thymeleaf.
+     * Render the Thymeleaf template into an HTML string.
      */
     public Email map(AppointmentDto appt,
                      String serviceName,
-                     String doctorName) {
-        if (appt.getPatientEmail() == null ||
-                appt.getPatientEmail().isBlank()) {
+                     int durationMinutes,
+                     String doctorName,
+                     String licenseNumber) {
+        if (appt.getPatientEmail() == null || appt.getPatientEmail().isBlank()) {
             throw new MissingEmailException("Patient email missing for: " + appt);
         }
 
-        // Prepare Thymeleaf context
+        // 1) prepare the Thymeleaf context
         Context ctx = new Context();
         ctx.setVariable("patientName",     appt.getPatientName());
         ctx.setVariable("code",            appt.getCode());
         ctx.setVariable("serviceName",     serviceName);
+        ctx.setVariable("durationMinutes", durationMinutes);
         ctx.setVariable("doctorName",      doctorName);
+        ctx.setVariable("licenseNumber",   licenseNumber);
         ctx.setVariable("appointmentDate", appt.getAppointmentDate());
         ctx.setVariable("extras",          appt.getExtraFields());
 
-        // Process template into a String
+        // 2) process the template
         String htmlBody = templateEngine.process(
-                "appointment-confirmation",
+                "appointment-confirmation",  // src/main/resources/templates/appointment-confirmation.html
                 ctx
         );
 
+        // 3) build the Email object
         String subject = String.format(
                 "Conferma Appuntamento %s – %s",
                 appt.getCode(), serviceName
         );
-
         Email email = new Email(
                 FROM_ADDRESS,
                 appt.getPatientEmail(),
                 subject,
                 htmlBody
         );
-
         email.setScheduledAt(new Date());
         return email;
     }

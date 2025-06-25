@@ -1,3 +1,4 @@
+// src/main/java/com/rabbit/bridge/mongorabbitbridge/service/EmailSenderService.java
 package com.rabbit.bridge.mongorabbitbridge.service;
 
 import com.example.shared.Email;
@@ -19,29 +20,36 @@ public class EmailSenderService {
     private final RabbitTemplate rabbit;
     private final BridgeProperties props;
     private final AppointmentToEmailMapper mapper;
-    private final ServiceApiClient serviceClient;
-    private final DoctorApiClient doctorClient;
+    private final ServiceApiClient  serviceClient;
+    private final DoctorApiClient   doctorClient;
 
     public EmailSenderService(RabbitTemplate rabbit,
                               BridgeProperties props,
                               AppointmentToEmailMapper mapper,
                               ServiceApiClient serviceClient,
                               DoctorApiClient doctorClient) {
-        this.rabbit         = rabbit;
-        this.props          = props;
-        this.mapper         = mapper;
-        this.serviceClient  = serviceClient;
-        this.doctorClient   = doctorClient;
+        this.rabbit        = rabbit;
+        this.props         = props;
+        this.mapper        = mapper;
+        this.serviceClient = serviceClient;
+        this.doctorClient  = doctorClient;
     }
 
     /**
-     * Resolve service + doctor names, render HTML email, and enqueue.
+     * Resolve service + doctor details, render HTML email, and enqueue.
      */
     public void sendAppointmentEmail(AppointmentDto dto) {
-        String serviceName = serviceClient.getServiceById(dto.getServiceId()).getName();
-        String doctorName  = doctorClient.getDoctorById(dto.getDoctorId()).getName();
+        var svc = serviceClient.getServiceById(dto.getServiceId());
+        var doc = doctorClient.getDoctorById(dto.getDoctorId());
 
-        Email email = mapper.map(dto, serviceName, doctorName);
+        Email email = mapper.map(
+                dto,
+                svc.getName(),
+                svc.getDurationMinutes(),
+                doc.getName(),
+                doc.getLicenseNumber()
+        );
+
         rabbit.convertAndSend(props.getEmailQueue(), email);
         log.debug("Email enqueued → queue='{}', to='{}'",
                 props.getEmailQueue(), dto.getPatientEmail());
